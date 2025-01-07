@@ -43,4 +43,5 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation("com.mapbox.maps:android:11.9.0")
+    //implementation ("com.mapbox.maps:plugin-locationcomponent:11.9.0")
 }
