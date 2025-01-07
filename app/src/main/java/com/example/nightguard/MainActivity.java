@@ -2,6 +2,7 @@ package com.example.nightguard;
 
 import androidx.annotation.NonNull;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
@@ -31,6 +32,12 @@ import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateBearing;
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions;
 import com.mapbox.maps.plugin.viewport.state.FollowPuckViewportState;
 import com.mapbox.maps.plugin.viewport.transition.ViewportTransition;
+import com.example.nightguard.Report;
+import com.example.nightguard.ApiService;
+import com.example.nightguard.ApiClient;
+
+import com.mapbox.maps.plugin.gestures.GesturesPlugin;
+import com.mapbox.maps.plugin.Plugin;
 
 
 import java.util.List;
@@ -106,6 +113,22 @@ public class MainActivity extends AppCompatActivity {
                 style -> {
             setUpLocationComponent();
             setUpViewportTracking();
+
+            GesturesPlugin gesturesPlugin = mapView.getPlugin(Plugin.MAPBOX_GESTURES_PLUGIN_ID);
+                    if (gesturesPlugin != null) {
+                        gesturesPlugin.addOnMapClickListener(point -> {
+                            double latitude = point.latitude();
+                            double longitude = point.longitude();
+
+                            // Launch SubmitReportActivity with lat/lng
+                            Intent intent = new Intent(MainActivity.this, SubmitReportActivity.class);
+                            intent.putExtra("latitude", latitude);
+                            intent.putExtra("longitude", longitude);
+                            startActivity(intent);
+
+                            return true;
+                        });
+                    }
         });
     }
 
