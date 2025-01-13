@@ -3,6 +3,7 @@ package com.example.nightguard;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.EditText;
@@ -11,6 +12,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.FileProvider;
 
 import com.example.nightguard.ApiClient;
 import com.example.nightguard.ApiService;
@@ -25,6 +27,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -34,8 +37,6 @@ public class SubmitReportActivity extends AppCompatActivity {
     private double latitude;
     private double longitude;
     private EditText editDescription;
-    private Button btnTakePhoto;
-    private Button btnSubmit;
 
     private ApiService apiService;
     private Uri capturedImageUri;
@@ -44,8 +45,7 @@ public class SubmitReportActivity extends AppCompatActivity {
     private final ActivityResultLauncher<Intent> takePhotoLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && capturedImageUri != null) {
-
-                    uploadPhotoToFirebase(capturedImageUri);
+                    Toast.makeText(this, "Photo captured successfully!", Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, "Photo capture cancelled.", Toast.LENGTH_SHORT).show();
                 }
@@ -65,13 +65,12 @@ public class SubmitReportActivity extends AppCompatActivity {
         longitude = getIntent().getDoubleExtra("longitude", 0.0);
 
         editDescription = findViewById(R.id.editDescription);
-        btnTakePhoto = findViewById(R.id.btnTakePhoto);
-        btnSubmit = findViewById(R.id.btnSubmit);
+        Button btnTakePhoto = findViewById(R.id.btnTakePhoto);
+        Button btnSubmit = findViewById(R.id.btnSubmit);
 
         apiService = ApiClient.getApiService();
 
         btnTakePhoto.setOnClickListener(v -> {
-            // Camera intent
             launchCamera();
         });
 
@@ -80,21 +79,19 @@ public class SubmitReportActivity extends AppCompatActivity {
         });
     }
 
-
     private void launchCamera() {
-        // Create an intent to capture an image
-        Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        // You might want to create a temporary file URI for the photo
-        // We'll skip file creation details for brevity, or use MediaStore approach
-
-        // If you want a file-based approach:
-        // capturedImageUri = FileProvider.getUriForFile(...);
-
-        // For simplicity, rely on the system to store the thumbnail:
-        // NOTE: This approach only gives you a low-res thumbnail in some cases
-        // A full approach requires creating a FileProvider & file path
-
+        // Create intent to capture an image
+        File photoFile;
         try {
+            photoFile = createImageFile(); // Create temp file for image
+            capturedImageUri = FileProvider.getUriForFile(
+                    this,
+                    "com.example.nightguard.fileprovider",
+                    photoFile
+            );
+
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, capturedImageUri);
             takePhotoLauncher.launch(cameraIntent);
         } catch (Exception e) {
             e.printStackTrace();
@@ -102,10 +99,20 @@ public class SubmitReportActivity extends AppCompatActivity {
         }
     }
 
-    private void uploadPhotoToFirebase(Uri imageUri) {
-        if (imageUri == null) return;
+    private File createImageFile() throws IOException {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        return File.createTempFile(imageFileName, ".jpg", storageDir);
+    }
 
-        // Generate a unique filename in Firebase Storage
+    private void uploadPhotoToFirebase(Uri imageUri, FirebaseUploadCallback callback) {
+        if (imageUri == null) {
+            callback.onFailure("Image URI is null.");
+            return;
+        }
+
+        // Generate filename in Firebase Storage
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String fileName = "images/" + "IMG_" + timeStamp + ".jpg";
 
@@ -116,15 +123,10 @@ public class SubmitReportActivity extends AppCompatActivity {
         UploadTask uploadTask = photoRef.putFile(imageUri);
         uploadTask.addOnSuccessListener(taskSnapshot ->
                 photoRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                    uploadedPhotoUrl = uri.toString();
-                    Toast.makeText(SubmitReportActivity.this,
-                            "Photo uploaded successfully!",
-                            Toast.LENGTH_SHORT).show();
+                    callback.onSuccess(uri.toString());
                 })
         ).addOnFailureListener(e -> {
-            Toast.makeText(SubmitReportActivity.this,
-                    "Failed to upload photo: " + e.getMessage(),
-                    Toast.LENGTH_SHORT).show();
+            callback.onFailure("Failed to upload photo: " + e.getMessage());
         });
     }
 
@@ -135,31 +137,61 @@ public class SubmitReportActivity extends AppCompatActivity {
             return;
         }
 
-        // Create new Report with the photoUrl from Firebase
-        Report newReport = new Report(latitude, longitude, description, uploadedPhotoUrl);
+        if (capturedImageUri == null) {
+            Toast.makeText(this, "Please capture a photo before submitting.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // POST to Node.js server
-        Call<Report> call = apiService.createReport(newReport);
-        call.enqueue(new Callback<Report>() {
+        // Upload the photo to Firebase before creating the report
+        uploadPhotoToFirebase(capturedImageUri, new FirebaseUploadCallback() {
             @Override
-            public void onResponse(Call<Report> call, Response<Report> response) {
-                if (response.isSuccessful()) {
-                    Toast.makeText(SubmitReportActivity.this,
-                            "Report submitted!", Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-                    Toast.makeText(SubmitReportActivity.this,
-                            "Failed to submit report. Code: " + response.code(),
-                            Toast.LENGTH_SHORT).show();
-                }
+            public void onSuccess(String photoUrl) {
+                // Set the uploaded photo URL
+                uploadedPhotoUrl = photoUrl;
+
+                // Timestamp of report
+                String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+
+                // Create report after photo upload
+                Report newReport = new Report(latitude, longitude, description, photoUrl, timestamp);
+
+                // POST the report to Node.js server
+                Call<Report> call = apiService.createReport(newReport);
+                call.enqueue(new Callback<Report>() {
+                    @Override
+                    public void onResponse(Call<Report> call, Response<Report> response) {
+                        if (response.isSuccessful()) {
+                            Toast.makeText(SubmitReportActivity.this,
+                                    "Report submitted!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        } else {
+                            Toast.makeText(SubmitReportActivity.this,
+                                    "Failed to submit report. Code: " + response.code(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<Report> call, Throwable t) {
+                        Toast.makeText(SubmitReportActivity.this,
+                                "Error: " + t.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
 
             @Override
-            public void onFailure(Call<Report> call, Throwable t) {
+            public void onFailure(String errorMessage) {
                 Toast.makeText(SubmitReportActivity.this,
-                        "Error: " + t.getMessage(),
+                        "Failed to upload photo: " + errorMessage,
                         Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    interface FirebaseUploadCallback {
+        void onSuccess(String photoUrl);
+
+        void onFailure(String errorMessage);
     }
 }

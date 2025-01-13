@@ -9,13 +9,15 @@ public class Report {
 
     public Report(){}
 
-    public Report(double latitude, double longitude, String description, String photoUrl)
+    public Report(double latitude, double longitude, String description, String photoUrl, String timestamp)
     {
         this.latitude=latitude;
         this.longitude=longitude;
         this.description=description;
         this.photoUrl=photoUrl;
+        this.timestamp=timestamp;
     }
+
 
     public double getLatitude() {
         return latitude;

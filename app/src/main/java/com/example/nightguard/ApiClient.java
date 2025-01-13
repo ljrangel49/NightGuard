@@ -7,7 +7,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 public class ApiClient {
 
     private static Retrofit retrofit = null;
-    private static final String BASE_URL = "http://10.0.2.2:3001"; // FOR EMULATOR, LOOK AT LATER
+    private static final String BASE_URL = "https://nightguardapi.onrender.com";
 
     public static Retrofit getClient() {
         if (retrofit==null)
