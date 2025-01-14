@@ -7,24 +7,15 @@ import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+
 import android.widget.Toast;
 
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.maps.MapView;
 
-import com.mapbox.geojson.Point;
-import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.Style;
-import com.mapbox.maps.plugin.LocationPuck2D;
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin;
-import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener;
-import com.mapbox.maps.plugin.locationcomponent.OnIndicatorBearingChangedListener;
-import com.mapbox.maps.MapView;
-import com.mapbox.maps.MapboxLifecycleObserver;
 import com.mapbox.maps.plugin.Plugin;
 import com.mapbox.maps.plugin.viewport.ViewportPlugin;
 import com.mapbox.maps.plugin.viewport.data.DefaultViewportTransitionOptions;
@@ -32,12 +23,8 @@ import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateBearing;
 import com.mapbox.maps.plugin.viewport.data.FollowPuckViewportStateOptions;
 import com.mapbox.maps.plugin.viewport.state.FollowPuckViewportState;
 import com.mapbox.maps.plugin.viewport.transition.ViewportTransition;
-import com.example.nightguard.Report;
-import com.example.nightguard.ApiService;
-import com.example.nightguard.ApiClient;
 
 import com.mapbox.maps.plugin.gestures.GesturesPlugin;
-import com.mapbox.maps.plugin.Plugin;
 
 
 import java.util.List;
@@ -49,22 +36,6 @@ public class MainActivity extends AppCompatActivity {
     private MapView mapView;
     private PermissionsManager permissionsManager;
 
-    // Listener to move camera when user location changes
-    /*private final OnIndicatorPositionChangedListener onIndicatorPositionChangedListener =
-            new OnIndicatorPositionChangedListener() {
-                @Override
-                public void onIndicatorPositionChanged(@NonNull Point point) {
-                    // Center the camera on user location
-                    if (mapView != null) {
-                        mapView.getMapboxMap().setCamera(
-                                new CameraOptions.Builder()
-                                        .center(point)
-                                        .zoom(14.0)
-                                        .build()
-                        );
-                    }
-                }
-            };*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

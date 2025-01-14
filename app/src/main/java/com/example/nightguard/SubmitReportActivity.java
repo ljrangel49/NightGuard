@@ -14,9 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
 
-import com.example.nightguard.ApiClient;
-import com.example.nightguard.ApiService;
-import com.example.nightguard.Report;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
@@ -157,7 +154,7 @@ public class SubmitReportActivity extends AppCompatActivity {
 
                 // POST the report to Node.js server
                 Call<Report> call = apiService.createReport(newReport);
-                call.enqueue(new Callback<Report>() {
+                call.enqueue(new Callback<>() {
                     @Override
                     public void onResponse(Call<Report> call, Response<Report> response) {
                         if (response.isSuccessful()) {
