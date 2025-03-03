@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<style name="Theme.NightGuard.Splash" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenBackground">@drawable/background_nightguard</item>
+    <item name="windowSplashScreenAnimatedIcon">@drawable/splash_inset_logo</item>
+    <!-- Optionally, add icon background color -->
+    <item name="windowSplashScreenIconBackgroundColor">@android:color/transparent</item>
+    <!-- Specify your regular theme to be applied after the splash screen -->
+    <item name="postSplashScreenTheme">@style/Theme.NightGuard</item>
+</style>
+</resources>
