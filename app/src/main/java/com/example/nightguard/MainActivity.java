@@ -137,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
             ViewportTransition transition =
                     viewportPlugin.makeDefaultViewportTransition(
-                            new DefaultViewportTransitionOptions.Builder().build()
+                            new DefaultViewportTransitionOptions.Builder().maxDurationMs(1).build()
                     );
 
             viewportPlugin.transitionTo(followPuckViewportState, transition, success -> {
